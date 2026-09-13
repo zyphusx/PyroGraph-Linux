@@ -55,7 +55,7 @@ KCM.SimpleKCM {
         QQC2.Label {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 20
-            text: i18n("Polling nvidia-smi keeps a laptop GPU from sleeping. Desktop cards, which never sleep, use it automatically.")
+            text: i18n("For laptops without a firmware GPU sensor. Polling nvidia-smi keeps a laptop GPU from sleeping, so it's off unless you turn it on here. Desktops always use it.")
             wrapMode: Text.Wrap
             font: Kirigami.Theme.smallFont
             opacity: 0.7

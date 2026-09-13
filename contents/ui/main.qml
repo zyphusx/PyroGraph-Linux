@@ -21,6 +21,8 @@ PlasmoidItem {
     property string cpuSensor: ""
     property string gpuSensor: ""
     readonly property bool hasGpu: gpuSensor !== "none"
+    // Why an NVIDIA GPU has no reading: "enable-nvidia-smi" or "install-nvidia-smi". Empty otherwise.
+    property string gpuHint: ""
 
     // power-profiles-daemon state. profileList is a comma-joined string so it only notifies on real changes.
     property string activeProfile: ""
@@ -44,6 +46,7 @@ PlasmoidItem {
         let off = false;
         let cpuFrom = "none";
         let gpuFrom = "none";
+        let hint = "";
         let profile = "";
         let list = "";
         for (const line of stdout.split("\n")) {
@@ -60,6 +63,8 @@ PlasmoidItem {
                 gpu = parseInt(value) / 1000;
             } else if (key === "gpu_sensor") {
                 gpuFrom = value;
+            } else if (key === "gpu_hint" && value !== "none") {
+                hint = value;
             } else if (key === "profile" && value !== "none") {
                 profile = value;
             } else if (key === "profiles" && value !== "none") {
@@ -71,6 +76,7 @@ PlasmoidItem {
         gpuOff = off;
         cpuSensor = cpuFrom;
         gpuSensor = gpuFrom;
+        gpuHint = hint;
         profileList = list;
         if (!profileSwitching) {
             activeProfile = profile;
@@ -108,6 +114,11 @@ PlasmoidItem {
         if (hasGpu) {
             text += "\n" + sensorLine(i18n("GPU"), gpuSensor,
                                       gpuOff ? i18n("Off — sleeping") : Format.display(gpuTemp, cfg.useFahrenheit));
+            if (!gpuOff && gpuHint === "enable-nvidia-smi") {
+                text += "\n" + i18n("To read this laptop GPU, turn on nvidia-smi in the widget settings");
+            } else if (!gpuOff && gpuHint === "install-nvidia-smi") {
+                text += "\n" + i18n("To read this NVIDIA GPU, install nvidia-smi");
+            }
         }
         if (activeProfile) {
             text += "\n" + i18n("Power profile: %1", profileName(activeProfile));

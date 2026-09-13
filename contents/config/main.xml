@@ -21,7 +21,7 @@
             <default>2</default>
         </entry>
         <entry name="allowNvidiaSmi" type="Bool">
-            <label>Read an NVIDIA GPU that can sleep with nvidia-smi, which keeps it awake</label>
+            <label>Read a laptop's NVIDIA GPU with nvidia-smi, which keeps it from sleeping</label>
             <default>false</default>
         </entry>
 
