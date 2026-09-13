@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls as QQC2
+import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kcmutils as KCM
 
@@ -8,6 +9,7 @@ KCM.SimpleKCM {
     property alias cfg_useFahrenheit: useFahrenheit.checked
     property alias cfg_showProfileSwitcher: showProfileSwitcher.checked
     property alias cfg_updateInterval: updateInterval.value
+    property alias cfg_allowNvidiaSmi: allowNvidiaSmi.checked
     property alias cfg_cpuWarningTemp: cpuWarningTemp.value
     property alias cfg_cpuCriticalTemp: cpuCriticalTemp.value
     property alias cfg_gpuWarningTemp: gpuWarningTemp.value
@@ -44,9 +46,24 @@ KCM.SimpleKCM {
             textFromValue: (value, locale) => i18np("%1 second", "%1 seconds", value)
         }
 
+        QQC2.CheckBox {
+            id: allowNvidiaSmi
+            Kirigami.FormData.label: i18n("NVIDIA GPU:")
+            text: i18n("Use nvidia-smi if it's the only sensor")
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 20
+            text: i18n("Polling nvidia-smi keeps a laptop GPU from sleeping. Desktop cards, which never sleep, use it automatically.")
+            wrapMode: Text.Wrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+        }
+
         Kirigami.Separator {
             Kirigami.FormData.isSection: true
-            Kirigami.FormData.label: i18n("CPU colors (i9-10980HK)")
+            Kirigami.FormData.label: i18n("CPU colors")
         }
 
         DegreesSpinBox {
@@ -65,7 +82,7 @@ KCM.SimpleKCM {
 
         Kirigami.Separator {
             Kirigami.FormData.isSection: true
-            Kirigami.FormData.label: i18n("GPU colors (RTX 3080 Laptop)")
+            Kirigami.FormData.label: i18n("GPU colors")
         }
 
         DegreesSpinBox {

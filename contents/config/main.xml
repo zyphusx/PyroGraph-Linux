@@ -20,8 +20,12 @@
             <label>Seconds between sensor reads</label>
             <default>2</default>
         </entry>
+        <entry name="allowNvidiaSmi" type="Bool">
+            <label>Read an NVIDIA GPU that can sleep with nvidia-smi, which keeps it awake</label>
+            <default>false</default>
+        </entry>
 
-        <!-- i9-10980HK: TjMax 100 °C, and it routinely sits around 90 °C under load in this chassis. -->
+        <!-- Tuned on an i9-10980HK (TjMax 100 °C), which routinely sits around 90 °C under load. -->
         <entry name="cpuWarningTemp" type="Int">
             <default>90</default>
         </entry>
@@ -29,7 +33,7 @@
             <default>97</default>
         </entry>
 
-        <!-- RTX 3080 Laptop GPU: NVIDIA's maximum operating temperature is 87 °C. -->
+        <!-- Tuned on an RTX 3080 Laptop GPU, whose maximum operating temperature is 87 °C. -->
         <entry name="gpuWarningTemp" type="Int">
             <default>80</default>
         </entry>

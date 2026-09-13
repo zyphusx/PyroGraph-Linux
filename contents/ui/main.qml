@@ -14,8 +14,13 @@ PlasmoidItem {
     // Degrees Celsius; NaN when the sensor could not be read.
     property real cpuTemp: NaN
     property real gpuTemp: NaN
-    // The RTX 3080 is runtime-suspended; the probe leaves it asleep rather than waking it to read.
+    // The GPU is runtime-suspended; the probe leaves it asleep rather than waking it to read.
     property bool gpuOff: false
+    // Which sensor the probe picked for each reading, e.g. "coretemp" or "amdgpu". "none" when this
+    // machine has no such sensor; empty until the first probe finishes.
+    property string cpuSensor: ""
+    property string gpuSensor: ""
+    readonly property bool hasGpu: gpuSensor !== "none"
 
     // power-profiles-daemon state. profileList is a comma-joined string so it only notifies on real changes.
     property string activeProfile: ""
@@ -30,22 +35,31 @@ PlasmoidItem {
     readonly property string probeCommand: {
         const url = Qt.resolvedUrl("../code/probe.sh").toString();
         const path = decodeURIComponent(url.replace(/^file:\/\//, ""));
-        return "sh '" + path.replace(/'/g, "'\\''") + "'";
+        return (cfg.allowNvidiaSmi ? "PYROGRAPH_NVIDIA_SMI=1 " : "") + "sh '" + path.replace(/'/g, "'\\''") + "'";
     }
 
     function readProbe(stdout) {
         let cpu = NaN;
         let gpu = NaN;
         let off = false;
+        let cpuFrom = "none";
+        let gpuFrom = "none";
         let profile = "";
         let list = "";
         for (const line of stdout.split("\n")) {
-            const [key, value] = line.trim().split(/\s+/);
+            const trimmed = line.trim();
+            const space = trimmed.indexOf(" ");
+            const key = space < 0 ? trimmed : trimmed.slice(0, space);
+            const value = space < 0 ? "" : trimmed.slice(space + 1);
             if (key === "cpu") {
                 cpu = parseInt(value) / 1000;
+            } else if (key === "cpu_sensor") {
+                cpuFrom = value;
             } else if (key === "gpu") {
                 off = value === "off";
                 gpu = parseInt(value) / 1000;
+            } else if (key === "gpu_sensor") {
+                gpuFrom = value;
             } else if (key === "profile" && value !== "none") {
                 profile = value;
             } else if (key === "profiles" && value !== "none") {
@@ -55,6 +69,8 @@ PlasmoidItem {
         cpuTemp = cpu;
         gpuTemp = gpu;
         gpuOff = off;
+        cpuSensor = cpuFrom;
+        gpuSensor = gpuFrom;
         profileList = list;
         if (!profileSwitching) {
             activeProfile = profile;
@@ -79,14 +95,20 @@ PlasmoidItem {
         probe.connectSource("powerprofilesctl set " + id);
     }
 
+    function sensorLine(label, sensor, reading) {
+        return sensor && sensor !== "none" ? i18n("%1 (%2): %3", label, sensor, reading) : i18n("%1: %2", label, reading);
+    }
+
     Plasmoid.backgroundHints: PlasmaCore.Types.DefaultBackground | PlasmaCore.Types.ConfigurableBackground
     preferredRepresentation: Plasmoid.formFactor === PlasmaCore.Types.Planar ? fullRepresentation : compactRepresentation
 
     toolTipMainText: Plasmoid.title
     toolTipSubText: {
-        let text = i18n("CPU (hottest core): %1\nGPU (RTX 3080): %2",
-                        Format.display(cpuTemp, cfg.useFahrenheit),
-                        gpuOff ? i18n("Off — sleeping") : Format.display(gpuTemp, cfg.useFahrenheit));
+        let text = sensorLine(i18n("CPU"), cpuSensor, Format.display(cpuTemp, cfg.useFahrenheit));
+        if (hasGpu) {
+            text += "\n" + sensorLine(i18n("GPU"), gpuSensor,
+                                      gpuOff ? i18n("Off — sleeping") : Format.display(gpuTemp, cfg.useFahrenheit));
+        }
         if (activeProfile) {
             text += "\n" + i18n("Power profile: %1", profileName(activeProfile));
         }
@@ -99,8 +121,11 @@ PlasmoidItem {
         connectedSources: []
         onNewData: (sourceName, data) => {
             disconnectSource(sourceName);
-            if (sourceName === root.probeCommand) {
-                root.readProbe(data["stdout"]);
+            // Checked by prefix, since probeCommand changes when the nvidia-smi setting is toggled mid-probe.
+            if (!sourceName.startsWith("powerprofilesctl ")) {
+                if (sourceName === root.probeCommand) {
+                    root.readProbe(data["stdout"]);
+                }
                 return;
             }
             // A profile switch finished. If it was refused, the refresh puts the dropdown back.
@@ -124,19 +149,20 @@ PlasmoidItem {
         id: full
 
         readonly property bool stacked: root.cfg.layoutMode === 1
+        readonly property int readouts: root.hasGpu ? 2 : 1
         readonly property real switcherHeight: profileSwitcher.visible ? profileSwitcher.implicitHeight + spacing : 0
 
         spacing: Kirigami.Units.smallSpacing
 
-        Layout.minimumWidth: Kirigami.Units.gridUnit * (stacked ? 5 : 7)
-        Layout.minimumHeight: Kirigami.Units.gridUnit * (stacked ? 6 : 3) + switcherHeight
-        Layout.preferredWidth: Kirigami.Units.gridUnit * (stacked ? 7 : 14)
-        Layout.preferredHeight: Kirigami.Units.gridUnit * (stacked ? 12 : 6) + switcherHeight
+        Layout.minimumWidth: Kirigami.Units.gridUnit * (stacked || readouts === 1 ? 5 : 7)
+        Layout.minimumHeight: Kirigami.Units.gridUnit * 3 * (stacked ? readouts : 1) + switcherHeight
+        Layout.preferredWidth: Kirigami.Units.gridUnit * 7 * (stacked ? 1 : readouts)
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 6 * (stacked ? readouts : 1) + switcherHeight
 
         GridLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            columns: full.stacked ? 1 : 2
+            columns: full.stacked ? 1 : full.readouts
             rowSpacing: Kirigami.Units.smallSpacing
             columnSpacing: Kirigami.Units.largeSpacing
 
@@ -152,6 +178,7 @@ PlasmoidItem {
             TempReadout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                visible: root.hasGpu
                 label: i18n("GPU")
                 celsius: root.gpuTemp
                 warning: root.cfg.gpuWarningTemp
@@ -190,12 +217,17 @@ PlasmoidItem {
             columnSpacing: Kirigami.Units.smallSpacing
 
             Repeater {
-                model: [
-                    { label: i18n("CPU"), celsius: root.cpuTemp, warning: root.cfg.cpuWarningTemp,
-                      critical: root.cfg.cpuCriticalTemp, emptyText: "" },
-                    { label: i18n("GPU"), celsius: root.gpuTemp, warning: root.cfg.gpuWarningTemp,
-                      critical: root.cfg.gpuCriticalTemp, emptyText: root.gpuEmptyText },
-                ]
+                model: {
+                    const items = [
+                        { label: i18n("CPU"), celsius: root.cpuTemp, warning: root.cfg.cpuWarningTemp,
+                          critical: root.cfg.cpuCriticalTemp, emptyText: "" },
+                    ];
+                    if (root.hasGpu) {
+                        items.push({ label: i18n("GPU"), celsius: root.gpuTemp, warning: root.cfg.gpuWarningTemp,
+                                     critical: root.cfg.gpuCriticalTemp, emptyText: root.gpuEmptyText });
+                    }
+                    return items;
+                }
 
                 PlasmaComponents.Label {
                     required property var modelData
