@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "zyphusx"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Shows the hottest CPU core and GPU temperature on your desktop",
+        "Icon": "temperature-normal",
+        "Id": "com.pyrograph.plasmoid",
+        "License": "GPL-3.0-or-later",
+        "Name": "Pyrograph",
+        "Version": "1.0.0",
+        "Website": "https://github.com/zyphusx/PyroGraph-Linux"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
