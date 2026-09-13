@@ -5,8 +5,9 @@ CPU and an NVIDIA GPU. It was developed and tuned on an Alienware with an i9-109
 Laptop GPU running Nobara 44.
 
 - **CPU**: the hottest of the `coretemp` "Core N" sensors, not the package average.
-- **GPU**: the NVIDIA GPU, read with `nvidia-smi`. When the GPU is runtime-suspended, the widget
-  shows **Off** and does *not* wake it up to take a reading, so it won't cost you battery.
+- **GPU**: the NVIDIA GPU's temperature as reported by the laptop firmware (`alienware_wmi`, or
+  `dell_smm` as a fallback). Pyrograph never calls `nvidia-smi` or opens the NVIDIA driver, so the
+  GPU can still drop into runtime D3 sleep. While it's asleep the widget shows **Off**.
 
 The numbers turn amber and red at thresholds tuned for this hardware (CPU 90/97 °C, GPU 80/87 °C).
 You can change the thresholds, layout (side by side or stacked), units, and update interval in the
@@ -15,8 +16,8 @@ widget settings. On a panel, the widget collapses to a compact `CPU 91°C GPU 60
 ## Requirements
 
 - KDE Plasma 6
-- NVIDIA proprietary driver (provides `nvidia-smi`)
 - Intel `coretemp` driver (loaded by default)
+- `alienware_wmi` or `dell_smm_hwmon` kernel module, for the GPU temperature
 
 ## Install
 
