@@ -6,6 +6,7 @@ import org.kde.kcmutils as KCM
 KCM.SimpleKCM {
     property alias cfg_layoutMode: layoutMode.currentIndex
     property alias cfg_useFahrenheit: useFahrenheit.checked
+    property alias cfg_showProfileSwitcher: showProfileSwitcher.checked
     property alias cfg_updateInterval: updateInterval.value
     property alias cfg_cpuWarningTemp: cpuWarningTemp.value
     property alias cfg_cpuCriticalTemp: cpuCriticalTemp.value
@@ -27,6 +28,12 @@ KCM.SimpleKCM {
             id: useFahrenheit
             Kirigami.FormData.label: i18n("Units:")
             text: i18n("Show temperatures in Fahrenheit")
+        }
+
+        QQC2.CheckBox {
+            id: showProfileSwitcher
+            Kirigami.FormData.label: i18n("Power profile:")
+            text: i18n("Show profile dropdown")
         }
 
         QQC2.SpinBox {

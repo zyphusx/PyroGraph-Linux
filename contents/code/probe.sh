@@ -1,8 +1,10 @@
 #!/bin/sh
-# Pyrograph temperature probe, tuned for alienware (i9-10980HK + RTX 3080 Laptop GPU).
-# Prints two lines:
+# Pyrograph probe, tuned for alienware (i9-10980HK + RTX 3080 Laptop GPU).
+# Prints four lines:
 #   cpu <millidegrees C of the hottest core> | none
 #   gpu <millidegrees C>                     | off (dGPU asleep) | none
+#   profile <active power profile>           | none
+#   profiles <comma-separated profile names> | none
 #
 # Never touches the NVIDIA driver (no nvidia-smi, no /dev/nvidia*), so the dGPU is free to
 # drop into runtime D3 whenever nothing else is using it.
@@ -53,5 +55,15 @@ for dev in "$SYS"/bus/pci/devices/*; do
     break
 done
 
+# Power profile from power-profiles-daemon: plain D-Bus property reads, no polkit needed.
+ppd() {
+    busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles \
+        org.freedesktop.UPower.PowerProfiles "$1" 2>/dev/null
+}
+profile=$(ppd ActiveProfile | cut -d'"' -f2)
+profiles=$(ppd Profiles | grep -o '"Profile" s "[a-z-]*"' | cut -d'"' -f4 | paste -sd, -)
+
 echo "cpu ${cpu:-none}"
 echo "gpu ${gpu:-none}"
+echo "profile ${profile:-none}"
+echo "profiles ${profiles:-none}"

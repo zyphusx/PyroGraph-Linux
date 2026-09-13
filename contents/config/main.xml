@@ -12,6 +12,10 @@
         <entry name="useFahrenheit" type="Bool">
             <default>false</default>
         </entry>
+        <entry name="showProfileSwitcher" type="Bool">
+            <label>Show the power profile dropdown under the temperatures</label>
+            <default>true</default>
+        </entry>
         <entry name="updateInterval" type="Int">
             <label>Seconds between sensor reads</label>
             <default>2</default>

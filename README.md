@@ -9,6 +9,11 @@ Laptop GPU running Nobara 44.
   `dell_smm` as a fallback). Pyrograph never calls `nvidia-smi` or opens the NVIDIA driver, so the
   GPU can still drop into runtime D3 sleep. While it's asleep the widget shows **Off**.
 
+A dropdown under the temperatures switches the power profile (Power Save, Balanced, Performance)
+through power-profiles-daemon. It also follows changes made elsewhere, such as the panel's power
+applet or falcond. On this Alienware, **Performance runs both fans at full speed** even when the laptop
+is cool, so drop to Balanced when you don't need the extra headroom.
+
 The numbers turn amber and red at thresholds tuned for this hardware (CPU 90/97 °C, GPU 80/87 °C).
 You can change the thresholds, layout (side by side or stacked), units, and update interval in the
 widget settings. On a panel, the widget collapses to a compact `CPU 91°C GPU 60°C` line.
@@ -18,6 +23,7 @@ widget settings. On a panel, the widget collapses to a compact `CPU 91°C GPU 60
 - KDE Plasma 6
 - Intel `coretemp` driver (loaded by default)
 - `alienware_wmi` or `dell_smm_hwmon` kernel module, for the GPU temperature
+- power-profiles-daemon, for the profile dropdown (it's hidden when the daemon isn't running)
 
 ## Install
 
